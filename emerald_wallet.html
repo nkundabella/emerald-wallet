@@ -1,0 +1,696 @@
+﻿<!DOCTYPE html>
+<html lang="en" class="dark scroll-smooth">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emerald Wallet Digital Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    :root {
+      --emerald-accent: #10b981;
+      --emerald-glow: rgba(16, 185, 129, 0.4);
+      --bg-dark: #011613;
+      --glass-bg: rgba(6, 78, 59, 0.25);
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: var(--bg-dark);
+      background-image:
+        radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(5, 150, 105, 0.05) 0px, transparent 50%);
+      color: #ecfdf5;
+      overflow-x: hidden;
+    }
+
+    .premium-glass {
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid rgba(16, 185, 129, 0.1);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    .emerald-card {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(6, 78, 59, 0.4));
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .emerald-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: conic-gradient(from 0deg, transparent, rgba(16, 185, 129, 0.1), transparent);
+      animation: rotate 10s linear infinite;
+    }
+
+    @keyframes rotate {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .total-liquidity-value {
+      font-size: clamp(2rem, 12vw, 6rem);
+      line-height: 1;
+      word-break: break-all;
+    }
+
+    .product-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(16, 185, 129, 0.1);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      min-height: 180px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .product-card:hover {
+      background: rgba(16, 185, 129, 0.05);
+      border-color: rgba(16, 185, 129, 0.3);
+      transform: translateY(-5px);
+    }
+
+    .product-card.selected {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: #10b981;
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+    }
+
+    .product-emoji {
+      font-size: 3.5rem;
+      transition: transform 0.3s ease;
+      filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.2));
+    }
+
+    .product-card:hover .product-emoji {
+      transform: scale(1.1) rotate(5deg);
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(16, 185, 129, 0.2);
+      border-radius: 10px;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen">
+
+  <div class="flex flex-col lg:flex-row min-h-screen">
+    <!-- Sidebar -->
+    <aside class="lg:w-80 premium-glass lg:h-screen sticky top-0 z-50 p-8 border-r border-emerald-900/40 flex flex-col">
+      <div class="flex items-center gap-4 mb-20">
+        <div
+          class="w-14 h-14 bg-emerald-500 rounded-2xl flex items-center justify-center text-emerald-950 shadow-2xl scale-animate">
+          <i class="fas fa-gem text-2xl"></i>
+        </div>
+        <div>
+          <h1 class="font-extrabold text-2xl tracking-tighter emerald-gradient-text uppercase">Emerald</h1>
+          <p class="text-[9px] font-black tracking-[0.4em] text-emerald-500/60 uppercase">Protocol 2.0</p>
+        </div>
+      </div>
+
+      <nav class="space-y-4 flex-grow">
+        <button onclick="switchTab('dashboard')" id="nav-dashboard"
+          class="tab-nav active w-full p-5 rounded-3xl flex items-center gap-5 transition hover:bg-emerald-500/5">
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+            <i class="fas fa-layer-group"></i>
+          </div>
+          <span class="font-bold text-sm">Command Center</span>
+        </button>
+        <button onclick="switchTab('cashier')" id="nav-cashier"
+          class="tab-nav w-full p-5 rounded-3xl flex items-center gap-5 transition hover:bg-emerald-500/5 text-emerald-700/50">
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+            <i class="fas fa-wallet"></i>
+          </div>
+          <span class="font-bold text-sm">Cashier Hub</span>
+        </button>
+      </nav>
+
+      <div class="mt-auto">
+        <div class="p-6 rounded-[32px] bg-black/40 border border-emerald-900/30 relative overflow-hidden group">
+          <div
+            class="absolute -right-4 -bottom-4 w-20 h-20 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all">
+          </div>
+          <p class="text-[9px] font-black text-emerald-400 mb-4 tracking-[0.2em] uppercase">Active Session</p>
+          <div class="space-y-2">
+            <p id="currentUid" class="text-xs font-mono text-emerald-100/60">Awaiting Scan...</p>
+            <div class="flex items-center gap-2">
+              <span id="conn-indicator" class="w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_8px_#10b981]"></span>
+              <p id="conn-text" class="text-[10px] font-bold text-emerald-500">LINK: STABLE</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-grow p-6 lg:p-14 relative overflow-y-auto">
+      <div class="max-w-7xl mx-auto space-y-12">
+
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+          <div>
+            <h2 class="text-4xl font-extrabold text-white tracking-tight">System Identity: <span
+                class="emerald-gradient-text">The Rock</span></h2>
+            <p class="text-emerald-500/40 font-medium">Monitoring encrypted RFID liquidity streams</p>
+          </div>
+          <div id="feedback"
+            class="hidden px-8 py-4 rounded-3xl font-black text-xs uppercase tracking-[0.2em] animate-fade-in shadow-2xl">
+          </div>
+          <!-- Debug Trigger -->
+          <div id="debug-trigger" class="hidden">
+            <button onclick="simulateScan()"
+              class="text-[9px] font-black text-white/5 uppercase hover:text-emerald-500 transition-all">
+              [ Simulate Scan ]
+            </button>
+          </div>
+        </header>
+
+        <!-- Dashboard View -->
+        <div id="tab-dashboard" class="grid grid-cols-1 xl:grid-cols-12 gap-10">
+
+          <div class="xl:col-span-8 space-y-10">
+            <!-- Glass Card Visual -->
+            <div
+              class="emerald-card rounded-[60px] p-14 min-h-[420px] flex flex-col justify-between border-t border-white/10 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.6)] group">
+              <div class="relative z-10 flex justify-between items-start">
+                <div class="space-y-1">
+                  <div class="px-4 py-1.5 bg-black/40 rounded-full border border-emerald-500/20 backdrop-blur-xl">
+                    <p id="holderDisplay" class="text-[9px] font-black text-emerald-400 tracking-[0.3em] uppercase">
+                      Authorized Operator</p>
+                  </div>
+                </div>
+                <div
+                  class="w-14 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center border border-emerald-500/20">
+                  <i class="fas fa-signal text-emerald-500"></i>
+                </div>
+              </div>
+              ...
+              <div class="relative z-10">
+                <p class="text-xs font-bold text-emerald-400/50 uppercase tracking-[0.4em] mb-4">Total Liquidity</p>
+                <div class="flex items-baseline gap-5">
+                  <span id="currentBalance"
+                    class="total-liquidity-value font-black tracking-tighter text-white drop-shadow-2xl">0</span>
+                  <div class="flex flex-col text-emerald-500/60 font-black">
+                    <span class="text-2xl tracking-tighter">RWF</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="relative z-10 flex items-center gap-8">
+                <p id="cardSerial" class="text-[10px] font-mono text-white/30 tracking-widest">####-####-####</p>
+                <div class="h-px flex-grow bg-emerald-500/10"></div>
+                <p class="text-[9px] font-black text-emerald-500/30 tracking-[0.3em] uppercase">Vault Index v2</p>
+              </div>
+            </div>
+
+            <!-- Top-Up Portal -->
+            <div class="premium-glass p-12 rounded-[50px] shadow-2xl border border-white/5">
+              <div class="flex items-center gap-5 mb-10">
+                <div
+                  class="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500 border border-emerald-500/20">
+                  <i class="fas fa-bolt text-xl"></i>
+                </div>
+                <h3 class="text-2xl font-extrabold text-white">Instant Credit Injection</h3>
+              </div>
+
+              <form id="topupForm" class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="space-y-3">
+                  <label class="text-[10px] font-black text-emerald-500/40 uppercase tracking-widest block ml-2">Node
+                    Serial</label>
+                  <input type="text" id="topup-uid" readonly required
+                    class="w-full px-8 py-5 bg-black/40 border border-emerald-900/40 rounded-3xl outline-none font-mono font-bold text-emerald-50 text-center uppercase tracking-widest backdrop-blur-md">
+                </div>
+                <div class="space-y-3">
+                  <label
+                    class="text-[10px] font-black text-emerald-500/40 uppercase tracking-widest block ml-2">Injection
+                    Amount</label>
+                  <input type="number" id="topup-amount" required placeholder="0.00"
+                    class="w-full px-8 py-5 bg-black/40 border border-emerald-900/40 rounded-3xl outline-none font-black text-white text-center text-xl placeholder:text-white/5 focus:border-emerald-500/50 transition-all">
+                </div>
+                <div class="flex items-end">
+                  <button type="submit"
+                    class="btn-premium w-full py-5 rounded-3xl font-black text-emerald-950 uppercase tracking-widest text-sm">Confirm
+                    Refill</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Vertical Stream -->
+          <div
+            class="xl:col-span-4 flex flex-col premium-glass rounded-[60px] p-12 h-[calc(100vh-280px)] border border-white/5">
+            <h3 class="text-xl font-extrabold text-white mb-10 flex items-center gap-4">
+              <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+              Emerald Stream
+            </h3>
+            <div id="updates" class="space-y-6 flex-grow overflow-y-auto pr-3 custom-scrollbar">
+              <div class="flex flex-col items-center justify-center h-full opacity-10 text-center space-y-4">
+                <i class="fas fa-satellite p-8 text-6xl"></i>
+                <p class="font-black text-xs tracking-widest uppercase">Awaiting Network Packets</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Cashier View -->
+        <div id="tab-cashier" class="hidden max-w-4xl mx-auto">
+          <div class="premium-glass p-16 rounded-[60px] border border-white/5 shadow-3xl text-center space-y-12">
+            <div class="space-y-4">
+              <div
+                class="w-20 h-20 bg-emerald-500/10 rounded-[32px] flex items-center justify-center text-emerald-500 border border-emerald-500/20 mx-auto floating">
+                <i class="fas fa-shopping-cart text-3xl"></i>
+              </div>
+              <h3 class="text-4xl font-extrabold text-white">Encrypted Checkout</h3>
+              <p class="text-emerald-500/50 font-medium">Authorized debit protocol for inventory assets</p>
+            </div>
+
+            <form id="payForm" class="space-y-10 max-w-4xl mx-auto">
+              <!-- Target Card Info -->
+              <div
+                class="p-8 bg-black/40 border border-emerald-900/40 rounded-[40px] flex items-center justify-between backdrop-blur-md">
+                <div class="text-left space-y-1">
+                  <p class="text-[9px] font-black text-emerald-500/40 uppercase tracking-widest">Active Ledger</p>
+                  <p id="pay-target-uid" class="font-mono text-lg font-bold text-white tracking-widest uppercase">---
+                  </p>
+                </div>
+                <div class="text-right">
+                  <p class="text-[9px] font-black text-emerald-500/40 uppercase tracking-widest mb-1">Available</p>
+                  <p id="pay-target-balance" class="text-3xl font-black text-emerald-400">0 RWF</p>
+                </div>
+              </div>
+
+              <!-- Product Visual Grid -->
+              <div class="space-y-6">
+                <div class="flex items-center justify-between px-4">
+                  <h4 class="text-xs font-black text-emerald-500/60 uppercase tracking-[0.3em]">Select Asset</h4>
+                  <div class="flex gap-2" id="category-filters">
+                    <!-- Filters will be generated -->
+                  </div>
+                </div>
+                <div id="product-grid"
+                  class="grid grid-cols-2 md:grid-cols-3 gap-6 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                  <!-- Product cards will be generated here -->
+                </div>
+              </div>
+
+              <input type="hidden" id="product-selected-id">
+
+              <div
+                class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center bg-black/20 p-8 rounded-[40px] border border-white/5">
+                <div class="space-y-3 text-left">
+                  <label class="text-[10px] font-black text-emerald-500/40 uppercase tracking-widest ml-4 block">Unit
+                    Multiplier</label>
+                  <div
+                    class="flex items-center gap-4 bg-black/40 border border-emerald-900/40 rounded-[32px] px-6 py-4">
+                    <button type="button" onclick="adjustQty(-1)"
+                      class="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400 hover:bg-emerald-500/20 transition-all">
+                      <i class="fas fa-minus"></i>
+                    </button>
+                    <input type="number" id="pay-quantity" value="1" min="1"
+                      class="flex-grow bg-transparent border-none outline-none font-black text-white text-center text-2xl">
+                    <button type="button" onclick="adjustQty(1)"
+                      class="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400 hover:bg-emerald-500/20 transition-all">
+                      <i class="fas fa-plus"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="text-[10px] font-bold text-white/40 uppercase tracking-widest block mb-2">Total
+                    Liability</span>
+                  <span id="total-cost" class="text-5xl font-black emerald-gradient-text tracking-tighter">0 RWF</span>
+                </div>
+              </div>
+
+              <button type="submit" id="paySubmitBtn" disabled
+                class="btn-premium w-full py-8 rounded-[40px] font-black text-xl text-emerald-950 uppercase tracking-widest shadow-[0_20px_50px_rgba(16,185,129,0.3)] opacity-50 cursor-not-allowed">
+                Decrypt & Finalize Payment
+              </button>
+            </form>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // --- State Management ---
+    let products = [];
+    let currentCardData = null;
+
+    // --- DOM References ---
+    const currentBalanceEl = document.getElementById('currentBalance');
+    const currentUidEl = null;
+    const cardSerialEl = document.getElementById('cardSerial');
+    const holderDisplayEl = document.getElementById('holderDisplay');
+    const updatesDiv = document.getElementById('updates');
+    const feedback = document.getElementById('feedback');
+
+    const topupUidInput = document.getElementById('topup-uid');
+    const payTargetUid = document.getElementById('pay-target-uid');
+    const payTargetBalance = document.getElementById('pay-target-balance');
+    const totalCostDisplay = document.getElementById('total-cost');
+    const payQuantityInput = document.getElementById('pay-quantity');
+
+    // --- Debug Utilities ---
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === '') {
+      document.getElementById('debug-trigger').classList.remove('hidden');
+    }
+
+    async function simulateScan() {
+      console.log("[DEBUG] Triggering virtual scan sequence...");
+      addLog('SCAN', "Simulating Encrypted Node Signature", 'emerald');
+      // Directly invoke updateUI with test data to verify visual stack
+      const testData = {
+        uid: "EMERALD-TEST-SIGNATURE",
+        balance: 100000,
+        holderName: "System Architect"
+      };
+      updateUI(testData);
+      currentCardData = testData;
+      showFeedback('SIMULATION ACTIVE', 'success');
+    }
+
+    const productGrid = document.getElementById('product-grid');
+    const productSelectedId = document.getElementById('product-selected-id');
+    const paySubmitBtn = document.getElementById('paySubmitBtn');
+
+    // --- Configuration ---
+    const config = {
+      getBackendUrl: function () {
+        const hostname = window.location.hostname;
+        // Force 127.0.0.1 for local dev to bypass Windows IPv6 resolution issues
+        if (hostname === '' || hostname === 'localhost' || hostname === '127.0.0.1') {
+          return 'http://127.0.0.1:9259';
+        }
+        return 'http://157.173.101.159:9259';
+      }
+    };
+
+    const serverUrl = config.getBackendUrl();
+    const wsUrl = serverUrl.replace("http", "ws");
+
+    let socket;
+    function connectWS() {
+      console.log(`[WS] Attempting connection to ${wsUrl}...`);
+      socket = new WebSocket(wsUrl);
+
+      socket.onopen = () => {
+        console.log(`✓ [WS] Connection established with ${wsUrl}`);
+        document.getElementById('conn-indicator').style.backgroundColor = '#10b981';
+        document.getElementById('conn-text').textContent = 'LINK: STABLE';
+      };
+
+      socket.onclose = () => {
+        document.getElementById('conn-indicator').style.backgroundColor = '#f43f5e';
+        document.getElementById('conn-text').textContent = 'LINK: OFFLINE';
+        setTimeout(connectWS, 2000); // Auto-reconnect
+      };
+
+      socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        console.log("[WS] Message:", data);
+
+        if (data.event === 'card-detected') {
+          currentCardData = data;
+          updateUI(data);
+          addLog('SCAN', `Node ${data.uid} Synchronized`, 'emerald');
+        }
+        else if (data.event === 'transaction-complete') {
+          if (data.status === 'success') {
+            currentBalanceEl.textContent = data.newBalance.toLocaleString();
+            if (currentCardData && data.uid === currentCardData.uid) {
+              currentCardData.balance = data.newBalance;
+              payTargetBalance.textContent = `${data.newBalance.toLocaleString()} RWF`;
+            }
+            addLog(data.type, `${data.amount} RWF Vault Update`, data.type === 'TOPUP' ? 'emerald' : 'blue');
+            showFeedback(`${data.type} SUCCESS`, 'success');
+          }
+        }
+      };
+    }
+
+    connectWS();
+    setTimeout(() => {
+      loadProducts();
+      loadHistory();
+    }, 500);
+
+    async function loadHistory() {
+      try {
+        const res = await fetch(`${serverUrl}/transactions`);
+        const txs = await res.json();
+        if (txs.length > 0) {
+          updatesDiv.innerHTML = '';
+          txs.reverse().forEach(tx => addLog(tx.type, `${tx.amount} RWF Vault Update`, tx.type === 'TOPUP' ? 'emerald' : 'blue', tx.timestamp));
+        }
+      } catch (e) {
+        console.error("History fetch failed");
+      }
+    }
+
+    function updateUI(data) {
+      if (currentBalanceEl) currentBalanceEl.textContent = data.balance.toLocaleString();
+      if (cardSerialEl) cardSerialEl.textContent = `${data.uid.slice(0, 4)}-${data.uid.slice(4, 8)}-${data.uid.slice(8, 12) || '####'}`;
+      if (holderDisplayEl) holderDisplayEl.textContent = data.holderName || "ANONYMOUS OPERATOR";
+      if (topupUidInput) topupUidInput.value = data.uid;
+      if (payTargetUid) payTargetUid.textContent = data.uid;
+      if (payTargetBalance) payTargetBalance.textContent = `${data.balance.toLocaleString()} RWF`;
+    }
+
+    function selectProduct(id) {
+      if (productSelectedId.value === id) {
+        // If already selected, increase quantity
+        adjustQty(1);
+        return;
+      }
+
+      // Select new product
+      document.querySelectorAll('.product-card').forEach(c => c.classList.remove('selected'));
+      const card = document.querySelector(`[data-id="${id}"]`);
+      if (card) {
+        card.classList.add('selected');
+        productSelectedId.value = id;
+        payQuantityInput.value = 1; // Reset to 1 on new selection
+
+        // Enable button
+        paySubmitBtn.disabled = false;
+        paySubmitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        paySubmitBtn.classList.add('bg-emerald-500', 'text-emerald-950');
+
+        updateTotal();
+      }
+    }
+
+    function adjustQty(delta) {
+      const val = parseInt(payQuantityInput.value) + delta;
+      if (val >= 1) {
+        payQuantityInput.value = val;
+        updateTotal();
+      }
+    }
+
+    async function loadProducts() {
+      try {
+        console.log(`[API] Fetching from ${serverUrl}/products...`);
+        const res = await fetch(`${serverUrl}/products`);
+        products = await res.json();
+        renderProductGrid(products);
+        renderFilters();
+        updateTotal();
+      } catch (e) {
+        console.error("Product sync failed");
+      }
+    }
+
+    function renderFilters() {
+      const categories = ['All', ...new Set(products.map(p => p.category))];
+      const filterContainer = document.getElementById('category-filters');
+      filterContainer.innerHTML = categories.map(cat => `
+        <button onclick="filterProducts('${cat}')" 
+                class="filter-btn px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border border-emerald-500/10 text-emerald-500/30 hover:text-emerald-500 hover:bg-emerald-500/5 transition-all">
+          ${cat}
+        </button>
+      `).join('');
+    }
+
+    window.filterProducts = (category) => {
+      document.querySelectorAll('.filter-btn').forEach(b => {
+        const isActive = b.textContent.trim() === category;
+        b.classList.toggle('text-emerald-500', isActive);
+        b.classList.toggle('border-emerald-500/40', isActive);
+      });
+      const filtered = category === 'All' ? products : products.filter(p => p.category === category);
+      renderProductGrid(filtered);
+    };
+
+    function renderProductGrid(items) {
+      if (items.length === 0) {
+        productGrid.innerHTML = `<p class="col-span-full text-center text-white/40 py-10">No products found.</p>`;
+        return;
+      }
+      productGrid.innerHTML = items.map((p, i) => `
+        <div class="product-card p-8 rounded-[40px] text-center space-y-4 animate-fade-in group" 
+             style="animation-delay: ${i * 0.05}s"
+             data-id="${p._id}" 
+             onclick="selectProduct('${p._id}')">
+          <div class="product-emoji text-6xl group-hover:scale-110 transition-transform duration-500">${p.emoji || '📦'}</div>
+          <div class="space-y-1">
+            <h5 class="text-sm font-black text-white uppercase tracking-tight">${p.name}</h5>
+            <p class="text-[11px] font-extrabold text-emerald-500/80">${p.price.toLocaleString()} RWF</p>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function updateTotal() {
+      const product = products.find(p => p._id === productSelectedId.value);
+      if (product) {
+        const total = product.price * parseInt(payQuantityInput.value);
+        totalCostDisplay.textContent = `${total.toLocaleString()} RWF`;
+        totalCostDisplay.classList.add('animate-pulse');
+        setTimeout(() => totalCostDisplay.classList.remove('animate-pulse'), 500);
+      } else {
+        totalCostDisplay.textContent = '0 RWF';
+      }
+    }
+
+    payQuantityInput.addEventListener('input', updateTotal);
+
+    document.getElementById('topupForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const amount = parseInt(document.getElementById('topup-amount').value);
+      if (!currentCardData) return showFeedback('NO ACTIVE SCAN', 'error');
+
+      const res = await fetch(`${serverUrl}/topup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid: currentCardData.uid, amount, holderName: currentCardData.holderName })
+      });
+      if (res.ok) {
+        document.getElementById('topup-amount').value = '';
+        showFeedback('INJECTION SUCCESSFUL', 'success');
+      } else {
+        showFeedback('INJECTION REJECTED', 'error');
+      }
+    });
+
+    document.getElementById('payForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!currentCardData) return showFeedback('NO ACTIVE SCAN', 'error');
+      if (!productSelectedId.value) return showFeedback('SELECT ASSET', 'error');
+
+      paySubmitBtn.disabled = true;
+      paySubmitBtn.textContent = 'AUTHORIZING...';
+
+      const res = await fetch(`${serverUrl}/pay`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uid: currentCardData.uid,
+          product_id: productSelectedId.value,
+          quantity: parseInt(payQuantityInput.value)
+        })
+      });
+
+      paySubmitBtn.disabled = false;
+      paySubmitBtn.textContent = 'Decrypt & Finalize Payment';
+
+      if (res.ok) {
+        showFeedback('PAYMENT SUCCESSFUL', 'success');
+        payQuantityInput.value = 1; // Reset qty
+        loadHistory(); // Refresh history immediately
+      } else {
+        const err = await res.json();
+        showFeedback(err.error.toUpperCase(), 'error');
+      }
+    });
+
+    function addLog(type, text, color, ts) {
+      if (updatesDiv.children[0] && updatesDiv.children[0].textContent.includes('Awaiting')) updatesDiv.innerHTML = '';
+      const log = document.createElement('div');
+      log.className = `p-6 rounded-[32px] bg-white/5 border border-white/5 animate-fade-in group hover:bg-white/[0.08] transition-all mb-4`;
+      const timeStr = ts ? new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      log.innerHTML = `
+        <div class="flex items-center gap-5">
+          <div class="w-10 h-10 rounded-xl bg-${color === 'emerald' ? 'emerald' : 'sky'}-500/10 flex items-center justify-center text-${color === 'emerald' ? 'emerald' : 'sky'}-400">
+            <i class="fas fa-${type === 'PAYMENT' ? 'shopping-bag' : (type === 'SCAN' ? 'fingerprint' : 'plus')}"></i>
+          </div>
+          <div class="flex-grow">
+            <p class="text-[10px] font-black text-white leading-tight uppercase tracking-tight text-left">${text}</p>
+            <p class="text-[8px] font-black text-${color === 'emerald' ? 'emerald' : 'sky'}-500/40 uppercase tracking-widest mt-1 text-left">${timeStr}</p>
+          </div>
+          <i class="fas fa-chevron-right text-[8px] text-white/10 group-hover:text-emerald-500/40 transition-all"></i>
+        </div>
+      `;
+      updatesDiv.prepend(log);
+    }
+
+    function switchTab(tab) {
+      document.getElementById('tab-dashboard').classList.toggle('hidden', tab !== 'dashboard');
+      document.getElementById('tab-cashier').classList.toggle('hidden', tab !== 'cashier');
+
+      const navs = ['nav-dashboard', 'nav-cashier'];
+      navs.forEach(id => {
+        const btn = document.getElementById(id);
+        if (id === `nav-${tab}`) {
+          btn.classList.add('active');
+          btn.classList.remove('text-emerald-700/50');
+        } else {
+          btn.classList.remove('active');
+          btn.classList.add('text-emerald-700/50');
+        }
+      });
+    }
+
+    function showFeedback(text, type = 'success') {
+      feedback.textContent = text;
+      feedback.className = `px-8 py-4 rounded-[20px] font-black text-[10px] tracking-[0.2em] animate-fade-in ${type === 'success' ? 'bg-emerald-500 text-emerald-950 shadow-[0_10px_30px_rgba(16,185,129,0.3)]' : 'bg-rose-500 text-white shadow-[0_10px_30px_rgba(244,63,94,0.3)]'
+        }`;
+      feedback.classList.remove('hidden');
+      setTimeout(() => feedback.classList.add('hidden'), 5000);
+    }
+  </script>
+
+  <style>
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-fade-in {
+      animation: fadeIn 0.4s ease-out forwards;
+    }
+  </style>
+</body>
+
+</html>

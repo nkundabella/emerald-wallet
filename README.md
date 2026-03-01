@@ -1,29 +1,30 @@
-# Emerald Wallet | RFID Ecosystem (Production)
+# Emerald Wallet | RFID Ecosystem (v2.0 Production)
 
-This project is a high-performance RFID card top-up ecosystem. It features a NodeMCU Emerald Hub (Edge), a Remote Node.js API Bridge, and a real-time Web Dashboard.
+This project is a high-performance RFID card top-up and payment ecosystem. It features an ESP8266 Emerald Hub, a Node.js Backend with MongoDB persistence, and a real-time Web Dashboard.
 
 ## 🚀 Live Production URL
-**Dashboard:** [http://157.173.101.159:9259/wallet.html](http://157.173.101.159:9259/wallet.html)
+**Dashboard:** [http://157.173.101.159:9259/emerald_wallet.html](http://157.173.101.159:9259/emerald_wallet.html)
 
 ## System Architecture
 
-1.  **Emerald Hub (NodeMCU ESP8266):** Scans RFID cards and tracks balances in a local memory array. It communicates via **MQTT** using the public broker `157.173.101.159`.
-2.  **Backend Bridge (Node.js):** Hosted on a remote server. It bridges MQTT events to the Web Dashboard via **WebSockets** and provides a REST API for top-ups.
-3.  **Web Dashboard:** A premium, real-time UI built with Tailwind CSS for monitoring scans and managing liquidity.
+1.  **Emerald Hub (NodeMCU ESP8266):** Scans RFID cards. Communicates via **MQTT** using the broker `157.173.101.159`.
+2.  **Backend Bridge (Node.js):** Hosted on a remote server. Bridges MQTT to the Web Dashboard via **Native WebSockets** and provides a REST API.
+3.  **Database (MongoDB Atlas):** Stores cardholder data, balances, and a persistent transaction ledger.
+4.  **Web Dashboard:** Dual-mode UI (Admin/Cashier) built with Tailwind CSS.
 
 ## Project Structure
 
--   `firmware/`: C++ Arduino code for the ESP8266.
-    -   `firmware.ino`: Main logic for WiFi, MQTT, and memory-based balance tracking.
--   `server.js`: Node.js backend logic (deployed remotely).
--   `wallet.html`: Frontend dashboard (served by the backend).
+-   `firmware/`: C++ Arduino code for the ESP8266 Hub.
+-   `server.js`: Node.js backend logic with MongoDB sessions for safe updates.
+-   `emerald_wallet.html`: Dual-interface frontend dashboard.
+-   `.env`: Configuration for DB URI and MQTT.
 
 ## Technical Specifications
 
--   **WiFi Networking:** Connects via `EdNet` (WPA2).
--   **MQTT Broker:** Public Cloud IP `157.173.101.159` on Port `1883`.
--   **Balance Logic:** Memory-based (RAM). *Note: Balances reset if the hub is powered off.*
--   **Identity Protection:** Unique Client IDs generated using ESP Chip ID to prevent hotspot collisions.
+-   **MQTT Broker:** `157.173.101.159` on Port `1883`.
+-   **Team Identifier:** `the_rock` (Strict topic isolation).
+-   **Safe Wallet Update:** Atomic transactions ensuring balance and ledger updates happen together.
+-   **Real-time Updates:** Push-based notifications via Native WebSockets.
 
 ## Hardware Wiring (NodeMCU to MFRC522)
 
@@ -38,39 +39,23 @@ This project is a high-performance RFID card top-up ecosystem. It features a Nod
 
 ## Deployment Guide
 
-### Hardware
+### Backend Setup
+1.  Navigate to `emerald-wallet/`.
+2.  Run `npm install`.
+3.  Create a `.env` file from `.env.example` and add your **MONGODB_URI**.
+4.  Start the server: `npm run dev`.
+
+### Hardware Setup
 1.  Open `firmware/firmware.ino` in Arduino IDE.
 2.  Install `PubSubClient`, `MFRC522`, and `ArduinoJson` libraries.
 3.  Upload to your NodeMCU ESP8266.
-4.  Open Serial Monitor (115200 baud) and confirm `[DEBUG] MQTT Connected!`.
 
-### Git Workflow
-To push updates to GitHub:
-```bash
-git add .
-git commit -m "Update: Production deployment config"
-git push origin main
-```
-
-## Team Member Customization (Forking)
-
-If you are a member of **THE ROCK** and want to deploy this for yourself on your own server/GitHub, change these specific lines:
-
-### 1. Firmware (`firmware/firmware.ino`)
--   **Line 8:** `TEAM_ID = "your_unique_name"` (Change this so you don't receive other people's scans!)
--   **Line 9 & 10:** Update `WIFI_SSID` and `WIFI_PASSWORD` for your local network.
--   **Line 11:** `MQTT_BROKER = "your_server_ip"` (The IP of your own cloud server).
-
-### 2. Backend (`server.js`)
--   **Line 13:** `const MQTT_BROKER = 'your_server_ip';`
--   **Line 91:** `const PORT = your_port_number;`
--   **Line 92:** `server.listen(PORT, 'your_server_ip', ...)`
-
-### 3. Dashboard (`wallet.html`)
--   **Line 268:** `const BACKEND_URL = "http://your_server_ip:your_port";`
+## Admin vs Cashier Interface
+-   **Admin**: Scanning a card identifies it and allows for balance top-ups.
+-   **Cashier**: Allows selecting products and deducting balance from the scanned card.
 
 ## Features
--   ✅ Real-time "Emerald Stream" balance updates.
--   ✅ Unique Team Identity (`the_rock`).
--   ✅ High-visibility debug logging.
--   ✅ Premium Glassmorphism UI.
+-   ✅ Atomic Transaction Ledger (Top-up & Payment).
+-   ✅ Persistent MongoDB Storage.
+-   ✅ Strict Topic Isolation (`rfid/the_rock/`).
+-   ✅ Premium Glassmorphism UI with dual tabs.
